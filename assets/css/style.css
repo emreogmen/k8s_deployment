@@ -14,7 +14,7 @@ body{
   height: 100vh;
   overflow: hidden;
   /*background: #5b9fbe;*/
-  background: #000000;
+  background: #cccccc;
 }
 ::selection{
   color: #fff;
