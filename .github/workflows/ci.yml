@@ -9,7 +9,7 @@ on:
     paths:
       - 'assets/**'
     branches:
-      - main
+      - master
   workflow_dispatch:  # ← manual trigger button in GitHub
 
 env:
