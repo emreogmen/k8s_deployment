@@ -10,7 +10,7 @@ on:
       - 'assets/**'
     branches:
       - master
-  workflow_dispatch:  # Manual trigger for GitHub Actions
+  workflow_dispatch:  # ← manual trigger button in GitHub
 
 env:
   AWS_REGION: us-west-2
@@ -37,32 +37,31 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Run go mod tidy
+      run: go mod tidy
+
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
 
-    # Step 1: Pull the latest image from ECR
-    - name: Pull latest image from ECR
-      run: |
-        docker pull $ECR_URI:$IMAGE_TAG
+    # Docker layer caching: Save cache between builds
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile', '**/go.mod', '**/go.sum') }}  # Based on Dockerfile and Go dependencies
+        restore-keys: |
+          ${{ runner.os }}-docker-
 
-    # Step 2: Replace assets folder in the image and build it
-    - name: Replace assets folder and build Docker image
+    - name: Create Buildx Builder and Push Image
       run: |
-        # Create a temporary directory to mount and replace the assets folder
-        mkdir /tmp/tasky
-        # Copy the assets folder from the repository to the temporary directory
-        cp -r ./assets /tmp/tasky/assets
-        # Run docker build with the updated assets folder
-        docker build \
-          --build-arg ASSETS_DIR=/tmp/tasky/assets \
-          -t $ECR_URI:$IMAGE_TAG .
+        docker buildx create --use
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t $ECR_URI:$IMAGE_TAG \
+          --push \
+          --cache-from=type=gha \
+          --cache-to=type=gha,mode=max .
 
-    # Step 3: Push the updated image to Amazon ECR
-    - name: Push updated image to Amazon ECR
-      run: |
-        docker push $ECR_URI:$IMAGE_TAG
-
-    # Step 4: Install kubectl and restart the Kubernetes pod
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
       with:
