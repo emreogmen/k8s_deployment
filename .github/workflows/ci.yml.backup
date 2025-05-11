@@ -1,6 +1,5 @@
 name: CD on Assets Change
 
-
 permissions:
   contents: read
   id-token: write
@@ -10,7 +9,7 @@ on:
     paths:
       - 'assets/**'
     branches:
-      - main
+      - master
   workflow_dispatch:  # ← manual trigger button in GitHub
 
 env:
@@ -44,13 +43,24 @@ jobs:
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
 
+    # Docker layer caching: Save cache between builds
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+
     - name: Create Buildx Builder and Push Image
       run: |
         docker buildx create --use
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           -t $ECR_URI:$IMAGE_TAG \
-          --push .
+          --push \
+          --cache-from=type=gha \
+          --cache-to=type=gha,mode=max .
 
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
