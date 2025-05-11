@@ -1,18 +1,11 @@
-name: CI/CD to ECR and EKS
+name: CD on Assets Change
 
 on:
   push:
     paths:
       - 'assets/**'
-      - 'auth/**'
-      - 'controllers/**'
-      - 'database/**'
-      - 'models/**'
-      - 'main.go'
-      - 'Dockerfile'
-      - 'go.mod'
-      - 'go.sum'
-    branches: [ "main" ]
+    branches:
+      - main
 
 env:
   AWS_REGION: us-west-2
@@ -38,11 +31,15 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Run go mod tidy
+      run: go mod tidy
+
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build and Push Docker image (multi-arch)
+    - name: Create Buildx Builder and Push Image
       run: |
+        docker buildx create --use
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           -t $ECR_URI:$IMAGE_TAG \
@@ -58,8 +55,7 @@ jobs:
         mkdir -p ~/.kube
         echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-    - name: Update K8s Deployment
+    - name: Rollout Restart Deployment
       run: |
-        kubectl config set-context --current --namespace=wiztest
-        kubectl set image deployment/tasky-deployment tasky=$ECR_URI:$IMAGE_TAG
+        kubectl rollout restart deployment tasky-deployment -n wiztest
 
