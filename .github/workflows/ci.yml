@@ -11,7 +11,7 @@ on:
       - 'assets/**'
     branches:
       - main
-    workflow_dispatch:  # ← manual trigger button in GitHub
+  workflow_dispatch:  # ← manual trigger button in GitHub
 
 env:
   AWS_REGION: us-west-2
