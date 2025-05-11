@@ -59,8 +59,7 @@ jobs:
 
     - name: Set up kubeconfig
       run: |
-        mkdir -p ~/.kube
-        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+        aws eks update-kubeconfig --name demo-cluster --region us-west-2
 
     - name: Rollout Restart Deployment
       run: |
