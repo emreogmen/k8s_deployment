@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasky-deployment
+  namespace: wiztest
+spec:
+  replicas: 1  # Update this for scaling (e.g., change to 3 for 3 replicas)
+  selector:
+    matchLabels:
+      app: tasky
+  template:
+    metadata:
+      labels:
+        app: tasky
+    spec:
+      serviceAccountName: tasky-admin-sa
+      containers:
+        - name: tasky
+          image: 727646490103.dkr.ecr.us-west-2.amazonaws.com/tasky:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MONGODB_URI
+              value: "mongodb://taskyuser:taskypass@192.168.91.47:27017/go-mongodb"
+            - name: SECRET_KEY
+              value: "secret123"
