@@ -6,7 +6,8 @@ body{
 	align-items: center;
 	min-height: 100vh;
 	font-family: 'Jost', sans-serif;
-	background: #5b9fbe
+/*	background: #5b9fbe;*/
+        background: #234388;
 }
 /*singup*/
 .main{
